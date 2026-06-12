@@ -16,8 +16,9 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", handlers.Health)
 	mux.HandleFunc("/generate", handlers.Generate)
-	mux.HandleFunc("/card.svg", handlers.Card)
-	mux.HandleFunc("/ascii", handlers.Ascii)
+	mux.HandleFunc("/card.svg", handlers.CardLive)
+	mux.HandleFunc("/ascii", handlers.CardLive)
+	mux.HandleFunc("/card/generate", handlers.CardGenerate)
 
 	port := os.Getenv("PORT")
 

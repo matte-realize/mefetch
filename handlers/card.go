@@ -1,95 +1,67 @@
 package handlers
 
 import (
-	"net/http"
 	"text/template"
 	"bytes"
 )
 
-type CardInput struct {
-	Username string
-	Hostname string
-	OS 		 string
-	Kernel	 string
-	Shell	 string
-	Editor	 string
-	Uptime   string
-	Colors	 string
+type Field struct {
+	Label string
+	Dots  string
+	Value string
 }
 
-var svgTemplate = `<svg xmlns="http://www.w3.org/2000/svg" width="495" height="195" viewBox="0 0 495 195">
+type CardInput struct {
+	Username   string
+	Hostname   string
+	Background string
+	KeyColor   string
+	TextColor  string
+	AsciiLines []string
+	Fields     []Field
+}
+
+var svgTemplate = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520">
   <style>
-    .bg    { fill: #0d1117; }
-    .border { fill: none; stroke: #30363d; stroke-width="1"; }
-    .title  { fill: #ffffff; font-family: monospace; font-size: 14px; font-weight: bold; }
+    .bg     { fill: {{.Background}}; }
+    .border { fill: none; stroke: #30363d; stroke-width: 1; }
+    .title  { fill: #ffffff; font-family: monospace; font-size: 13px; font-weight: bold; }
     .sep    { fill: #30363d; }
-    .key    { fill: #58a6ff; font-family: monospace; font-size: 12px; }
-    .val    { fill: #cdd9e5; font-family: monospace; font-size: 12px; }
+    .key    { fill: {{.KeyColor}}; font-family: monospace; font-size: 11px; }
+    .val    { fill: {{.TextColor}}; font-family: monospace; font-size: 11px; }
+    .ascii  { fill: {{.TextColor}}; font-family: monospace; font-size: 6.5px; }
+    .dots   { fill: #444d56; font-family: monospace; font-size: 11px; }
+    .green  { fill: #3fb950; font-family: monospace; font-size: 11px; }
+    .red    { fill: #f85149; font-family: monospace; font-size: 11px; }
+    .dim    { fill: #444d56; font-family: monospace; font-size: 11px; }
   </style>
 
-  <rect class="bg" width="495" height="195" rx="6" />
+  <rect class="bg" width="900" height="520" rx="8" />
+  <rect class="border" x="0.5" y="0.5" width="899" height="519" rx="8" />
 
-  <rect class="border" x="0.5" y="0.5" width="494" height="194" rx="6" />
+  {{range $i, $line := .AsciiLines}}
+  <text class="ascii" x="20" y="{{asciiY $i}}">{{$line}}</text>
+  {{end}}
 
-  <text class="title" x="25" y="35">{{.Username}}@{{.Hostname}}</text>
+  <rect class="sep" x="310" y="15" width="1" height="490" />
 
-  <rect class="sep" x="25" y="45" width="445" height="1" />
+  <text class="title" x="330" y="35">{{.Username}}@{{.Hostname}}</text>
+  <rect class="sep" x="330" y="45" width="550" height="1" />
 
-  <text class="key" x="25" y="65">OS</text>
-  <text class="val" x="120" y="65">{{.OS}}</text>
-
-  <text class="key" x="25" y="85">Kernel</text>
-  <text class="val" x="120" y="85">{{.Kernel}}</text>
-
-  <text class="key" x="25" y="105">Shell</text>
-  <text class="val" x="120" y="105">{{.Shell}}</text>
-
-  <text class="key" x="25" y="125">Editor</text>
-  <text class="val" x="120" y="125">{{.Editor}}</text>
-
-  <text class="key" x="25" y="145">Uptime</text>
-  <text class="val" x="120" y="145">{{.Uptime}}</text>
-
-  <text class="key" x="25" y="170">Colors</text>
-  <rect x="120" y="158" width="18" height="14" rx="2" fill="#ff5f56"/>
-  <rect x="142" y="158" width="18" height="14" rx="2" fill="#ffbd2e"/>
-  <rect x="164" y="158" width="18" height="14" rx="2" fill="#27c93f"/>
-  <rect x="186" y="158" width="18" height="14" rx="2" fill="#58a6ff"/>
-  <rect x="208" y="158" width="18" height="14" rx="2" fill="#cdd9e5"/>
-  <rect x="230" y="158" width="18" height="14" rx="2" fill="#ffffff"/>
+  {{range $i, $field := .Fields}}
+  <text class="key"  x="330" y="{{fieldY $i}}">{{$field.Label}}:</text>
+  <text class="dots" x="430" y="{{fieldY $i}}">{{$field.Dots}}</text>
+  <text class="val"  x="560" y="{{fieldY $i}}">{{$field.Value}}</text>
+  {{end}}
 </svg>`
 
-func Card(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		errorResponse(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	input := CardInput{
-		Username: r.URL.Query().Get("username"),
-		Hostname: r.URL.Query().Get("hostname"),
-		OS:       r.URL.Query().Get("os"),
-		Kernel:   r.URL.Query().Get("kernel"),
-		Shell:    r.URL.Query().Get("shell"),
-		Editor:   r.URL.Query().Get("editor"),
-		Uptime:   r.URL.Query().Get("uptime"),
-	}
-
-	var result string
-	ok := run(w,
-		func() error { return renderCard(input, &result) },
-	)
-	if !ok {
-		return
-	}
-
-	w.Header().Set("Content-Type", "image/svg+xml")
-	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
-	w.Write([]byte(result))
-}
-
 func renderCard(input CardInput, result *string) error {
-	tmpl, err := template.New("card").Parse(svgTemplate)
+	funcMap := template.FuncMap{
+		"asciiY": func(i int) int { return 20 + (i * 8) },
+		"fieldY": func(i int) int { return 65 + (i * 20) },
+	}
+
+	tmpl, err := template.New("card").Funcs(funcMap).Parse(svgTemplate)
 
 	if err != nil {
 		return err
@@ -103,4 +75,30 @@ func renderCard(input CardInput, result *string) error {
 
 	*result = buf.String()
 	return nil
+}
+
+func makeDots(label string) string {
+	total := 30
+	dots := total - len(label)
+	if dots < 3 {
+		dots = 3
+	}
+	result := ""
+	for i := 0; i < dots; i++ {
+		result += "."
+	}
+	return result
+}
+
+func defaultInput(input CardInput) CardInput {
+	if input.Background == "" {
+		input.Background = "#0d1117"
+	}
+	if input.KeyColor == "" {
+		input.KeyColor = "#58a6ff"
+	}
+	if input.TextColor == "" {
+		input.TextColor = "#cdd9e5"
+	}
+	return input
 }
