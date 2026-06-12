@@ -17,6 +17,7 @@ func main() {
 	mux.HandleFunc("/health", handlers.Health)
 	mux.HandleFunc("/generate", handlers.Generate)
 	mux.HandleFunc("/card.svg", handlers.Card)
+	mux.HandleFunc("/ascii", handlers.Ascii)
 
 	port := os.Getenv("PORT")
 
