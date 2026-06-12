@@ -16,9 +16,10 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", handlers.Health)
 	mux.HandleFunc("/generate", handlers.Generate)
+	mux.HandleFunc("/card.svg", handlers.Card)
 
 	port := os.Getenv("PORT")
-	
+
 	fmt.Printf("Server running on http://localhost:%s\n", port)
 
 	log.Fatal(http.ListenAndServe(":"+port, mux))

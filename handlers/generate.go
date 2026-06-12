@@ -14,6 +14,7 @@ type MefetchInput struct {
 	Kernel	 string `json:"kernel"`
 	Shell	 string `json:"shell"`
 	Editor	 string `json:"editor"`
+	Uptime   string `json:"uptime"`
 	Colors	 string `json:"colors"`
 }
 
@@ -24,6 +25,7 @@ var mefetchTemplate = `
 	Kernel	{{.Kernel}}
 	Shell	{{.Shell}}
 	Editor	{{.Editor}}
+	Uptime	{{.Uptime}}
 	Colors	{{.Colors}}
 `
 
