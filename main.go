@@ -19,6 +19,7 @@ func main() {
 	mux.HandleFunc("/card.svg", handlers.CardLive)
 	mux.HandleFunc("/ascii", handlers.CardLive)
 	mux.HandleFunc("/card/generate", handlers.CardGenerate)
+	mux.Handle("/", http.FileServer(http.Dir("static")))
 
 	port := os.Getenv("PORT")
 

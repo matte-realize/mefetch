@@ -35,6 +35,19 @@ func CardLive(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	showStats := q.Get("showstats") != "false"
+	if username != "" && showStats {
+		stats, err := FetchGitHubStats(username)
+		if err == nil {
+			fields = append(fields,
+				makeField("Repos",         fmt.Sprintf("%d", stats.TotalRepos),   ""),
+				makeField("Commits",       fmt.Sprintf("%d", stats.TotalCommits), ""),
+				makeField("Lines Added",   fmt.Sprintf("%d", stats.LinesAdded),   "green"),
+				makeField("Lines Deleted", fmt.Sprintf("%d", stats.LinesDeleted), "red"),
+			)
+		}
+	}
+
 	input := defaultInput(CardInput{
 		Username:   username,
 		Hostname:   q.Get("hostname"),

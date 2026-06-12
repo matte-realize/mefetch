@@ -23,41 +23,47 @@ type CardInput struct {
 	Fields     []Field
 }
 
-var svgTemplate = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520">
+var svgTemplate = `<svg xmlns="http://www.w3.org/2000/svg" width="860" height="490" viewBox="0 0 860 490">
   <style>
     .bg     { fill: {{.Background}}; }
     .border { fill: none; stroke: #30363d; stroke-width: 1; }
-    .title  { fill: #ffffff; font-family: monospace; font-size: 13px; font-weight: bold; }
+    .title  { fill: #ffffff; font-family: monospace; font-size: 12px; font-weight: bold; }
     .sep    { fill: #30363d; }
     .key    { fill: {{.KeyColor}}; font-family: monospace; font-size: 11px; }
     .val    { fill: {{.TextColor}}; font-family: monospace; font-size: 11px; }
-    .ascii  { fill: {{.TextColor}}; font-family: monospace; font-size: 6.5px; }
+    .ascii  { fill: {{.TextColor}}; font-family: monospace; font-size: 5.8px; }
     .dots   { fill: #444d56; font-family: monospace; font-size: 11px; }
     .green  { fill: #3fb950; font-family: monospace; font-size: 11px; }
     .red    { fill: #f85149; font-family: monospace; font-size: 11px; }
   </style>
 
-  <rect class="bg" width="900" height="520" rx="8" />
-  <rect class="border" x="0.5" y="0.5" width="899" height="519" rx="8" />
+  <rect class="bg" width="860" height="490" rx="8" />
+  <rect class="border" x="0.5" y="0.5" width="859" height="489" rx="8" />
 
+  <!-- ASCII art left side -->
   {{range $i, $line := .AsciiLines}}
-  <text class="ascii" x="20" y="{{asciiY $i}}">{{$line}}</text>
+  <text class="ascii" x="15" y="{{asciiY $i}}">{{$line}}</text>
   {{end}}
 
-  <rect class="sep" x="310" y="15" width="1" height="490" />
+  <!-- Divider -->
+  <rect class="sep" x="290" y="12" width="1" height="466" />
 
-  <text class="title" x="330" y="35">{{.Username}}@{{.Hostname}}</text>
-  <rect class="sep" x="330" y="45" width="550" height="1" />
+  <!-- Title -->
+  <text class="title" x="308" y="30">{{.Username}}@{{.Hostname}}</text>
 
+  <!-- Title separator line stretching to right edge -->
+  <text class="sep" x="308" y="44" fill="#444d56" font-family="monospace" font-size="11px">----------------------------------------------------------------</text>
+
+  <!-- Fields -->
   {{range $i, $field := .Fields}}
-  <text class="key"  x="330" y="{{fieldY $i}}">{{$field.Label}}:</text>
-  <text class="dots" x="430" y="{{fieldY $i}}">{{$field.Dots}}</text>
+  <text class="key"  x="308" y="{{fieldY $i}}">{{$field.Label}}:</text>
+  <text class="dots" x="410" y="{{fieldY $i}}">{{$field.Dots}}</text>
   {{if eq $field.Color "green"}}
-  <text class="green" x="560" y="{{fieldY $i}}">{{$field.Value}}</text>
+  <text class="green" x="600" y="{{fieldY $i}}">{{$field.Value}}</text>
   {{else if eq $field.Color "red"}}
-  <text class="red"   x="560" y="{{fieldY $i}}">{{$field.Value}}</text>
+  <text class="red"   x="600" y="{{fieldY $i}}">{{$field.Value}}</text>
   {{else}}
-  <text class="val"   x="560" y="{{fieldY $i}}">{{$field.Value}}</text>
+  <text class="val"   x="600" y="{{fieldY $i}}">{{$field.Value}}</text>
   {{end}}
   {{end}}
 
@@ -65,8 +71,8 @@ var svgTemplate = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="5
 
 func renderCard(input CardInput, result *string) error {
 	funcMap := template.FuncMap{
-		"asciiY": func(i int) int { return 20 + (i * 8) },
-		"fieldY": func(i int) int { return 65 + (i * 20) },
+		"asciiY": func(i int) int { return 14 + (i * 7) },
+		"fieldY": func(i int) int { return 58 + (i * 17) },
 	}
 
 	tmpl, err := template.New("card").Funcs(funcMap).Parse(svgTemplate)
