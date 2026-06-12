@@ -15,19 +15,18 @@ func CardGenerate(w http.ResponseWriter, r *http.Request) {
 	var img image.Image
 	var asciiArt string
 	var result string
+	var fields []Field
 
-	fields := []Field{
-		{Label: "OS",     Dots: makeDots("OS"),     Value: r.FormValue("os")},
-		{Label: "Kernel", Dots: makeDots("Kernel"), Value: r.FormValue("kernel")},
-		{Label: "Shell",  Dots: makeDots("Shell"),  Value: r.FormValue("shell")},
-		{Label: "Editor", Dots: makeDots("Editor"), Value: r.FormValue("editor")},
-		{Label: "Uptime", Dots: makeDots("Uptime"), Value: r.FormValue("uptime")},
-	}
-
-	var filtered []Field
-	for _, f := range fields {
-		if f.Value != "" {
-			filtered = append(filtered, f)
+	for _, f := range r.Form["field"] {
+		parts := strings.SplitN(f, ":", 2)
+		if len(parts) == 2 {
+			label := parts[0]
+			value := parts[1]
+			fields = append(fields, Field{
+				Label: label,
+				Dots:  makeDots(label),
+				Value: value,
+			})
 		}
 	}
 
@@ -37,7 +36,7 @@ func CardGenerate(w http.ResponseWriter, r *http.Request) {
 		Background: r.FormValue("background"),
 		KeyColor:   r.FormValue("keycolor"),
 		TextColor:  r.FormValue("textcolor"),
-		Fields:     filtered,
+		Fields:     fields,
 	})
 
 	ok := run(w,

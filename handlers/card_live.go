@@ -1,6 +1,9 @@
 package handlers
 
-import "net/http"
+import (
+	"net/http"
+	"strings"
+)
 
 func CardLive(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -10,19 +13,18 @@ func CardLive(w http.ResponseWriter, r *http.Request) {
 
 	q := r.URL.Query()
 
-	fields := []Field{
-		{Label: "OS",     Dots: makeDots("OS"),     Value: q.Get("os")},
-		{Label: "Kernel", Dots: makeDots("Kernel"), Value: q.Get("kernel")},
-		{Label: "Shell",  Dots: makeDots("Shell"),  Value: q.Get("shell")},
-		{Label: "Editor", Dots: makeDots("Editor"), Value: q.Get("editor")},
-		{Label: "Uptime", Dots: makeDots("Uptime"), Value: q.Get("uptime")},
-	}
+	var fields []Field
 
-	// filter out empty fields
-	var filtered []Field
-	for _, f := range fields {
-		if f.Value != "" {
-			filtered = append(filtered, f)
+	for _, f := range q["field"] {
+		parts := strings.SplitN(f, ":", 2)
+		if len(parts) == 2 {
+			label := parts[0]
+			value := parts[1]
+			fields = append(fields, Field{
+				Label: label,
+				Dots: makeDots(label),
+				Value: value,
+			})
 		}
 	}
 
@@ -32,7 +34,7 @@ func CardLive(w http.ResponseWriter, r *http.Request) {
 		Background: q.Get("background"),
 		KeyColor:   q.Get("keycolor"),
 		TextColor:  q.Get("textcolor"),
-		Fields:     filtered,
+		Fields:     fields,
 	})
 
 	var result string
