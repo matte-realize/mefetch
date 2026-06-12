@@ -1,14 +1,16 @@
 package handlers
 
 import (
-	"text/template"
 	"bytes"
+	"strings"
+	"text/template"
 )
 
 type Field struct {
 	Label string
 	Dots  string
 	Value string
+	Color string
 }
 
 type CardInput struct {
@@ -33,7 +35,6 @@ var svgTemplate = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="5
     .dots   { fill: #444d56; font-family: monospace; font-size: 11px; }
     .green  { fill: #3fb950; font-family: monospace; font-size: 11px; }
     .red    { fill: #f85149; font-family: monospace; font-size: 11px; }
-    .dim    { fill: #444d56; font-family: monospace; font-size: 11px; }
   </style>
 
   <rect class="bg" width="900" height="520" rx="8" />
@@ -51,8 +52,15 @@ var svgTemplate = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="5
   {{range $i, $field := .Fields}}
   <text class="key"  x="330" y="{{fieldY $i}}">{{$field.Label}}:</text>
   <text class="dots" x="430" y="{{fieldY $i}}">{{$field.Dots}}</text>
-  <text class="val"  x="560" y="{{fieldY $i}}">{{$field.Value}}</text>
+  {{if eq $field.Color "green"}}
+  <text class="green" x="560" y="{{fieldY $i}}">{{$field.Value}}</text>
+  {{else if eq $field.Color "red"}}
+  <text class="red"   x="560" y="{{fieldY $i}}">{{$field.Value}}</text>
+  {{else}}
+  <text class="val"   x="560" y="{{fieldY $i}}">{{$field.Value}}</text>
   {{end}}
+  {{end}}
+
 </svg>`
 
 func renderCard(input CardInput, result *string) error {
@@ -62,32 +70,17 @@ func renderCard(input CardInput, result *string) error {
 	}
 
 	tmpl, err := template.New("card").Funcs(funcMap).Parse(svgTemplate)
-
 	if err != nil {
 		return err
 	}
 
 	var buf bytes.Buffer
-
 	if err = tmpl.Execute(&buf, input); err != nil {
 		return err
 	}
 
 	*result = buf.String()
 	return nil
-}
-
-func makeDots(label string) string {
-	total := 30
-	dots := total - len(label)
-	if dots < 3 {
-		dots = 3
-	}
-	result := ""
-	for i := 0; i < dots; i++ {
-		result += "."
-	}
-	return result
 }
 
 func defaultInput(input CardInput) CardInput {
@@ -101,4 +94,23 @@ func defaultInput(input CardInput) CardInput {
 		input.TextColor = "#cdd9e5"
 	}
 	return input
+}
+
+func makeField(label, value, color string) Field {
+	return Field{
+		Label: label,
+		Dots:  makeDots(label),
+		Value: value,
+		Color: color,
+	}
+}
+
+func makeDots(label string) string {
+	total := 30
+	dots := total - len(label)
+	if dots < 3 {
+		dots = 3
+	}
+	result := strings.Repeat(".", dots)
+	return result
 }

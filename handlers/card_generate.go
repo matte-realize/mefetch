@@ -12,21 +12,13 @@ func CardGenerate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var img image.Image
-	var asciiArt string
-	var result string
-	var fields []Field
+	r.ParseMultipartForm(10 << 20)
 
+	var fields []Field
 	for _, f := range r.Form["field"] {
 		parts := strings.SplitN(f, ":", 2)
 		if len(parts) == 2 {
-			label := parts[0]
-			value := parts[1]
-			fields = append(fields, Field{
-				Label: label,
-				Dots:  makeDots(label),
-				Value: value,
-			})
+			fields = append(fields, makeField(parts[0], parts[1], ""))
 		}
 	}
 
@@ -38,6 +30,10 @@ func CardGenerate(w http.ResponseWriter, r *http.Request) {
 		TextColor:  r.FormValue("textcolor"),
 		Fields:     fields,
 	})
+
+	var img image.Image
+	var asciiArt string
+	var result string
 
 	ok := run(w,
 		func() error {
