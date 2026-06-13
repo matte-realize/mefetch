@@ -3,8 +3,14 @@ package handlers
 import (
 	"bytes"
 	"fmt"
+	"regexp"
 	"strings"
 	"text/template"
+)
+
+var (
+	plusRe  = regexp.MustCompile(`\d+\+\+`)
+	minusRe = regexp.MustCompile(`\d+--`)
 )
 
 const (
@@ -36,14 +42,15 @@ var svgTemplate = `<svg xmlns="http://www.w3.org/2000/svg" width="860" height="{
   <style>
     .bg        { fill: {{.Background}}; }
     .border    { fill: none; stroke: #30363d; stroke-width: 1; }
-    .title     { fill: #ffffff; font-family: monospace; font-size: 12px; font-weight: bold; }
-    .titledash { fill: #444d56; font-family: monospace; font-size: 12px; }
-    .divider   { fill: #ffffff; font-family: monospace; font-size: 12px; font-weight: bold; }
-    .dividash  { fill: #444d56; font-family: monospace; font-size: 12px; }
+    .title     { fill: #8b949e; font-family: monospace; font-size: 12px; font-weight: bold; }
+    .titledash { fill: #8b949e; font-family: monospace; font-size: 12px; }
+    .divider   { fill: #8b949e; font-family: monospace; font-size: 12px; font-weight: bold; }
+    .dividash  { fill: #8b949e; font-family: monospace; font-size: 12px; }
     .sep       { fill: #30363d; }
     .key       { fill: {{.KeyColor}}; font-family: monospace; font-size: 11px; }
     .val       { fill: {{.TextColor}}; font-family: monospace; font-size: 11px; }
     .ascii     { fill: {{.TextColor}}; font-family: monospace; font-size: 5.8px; }
+    .dot       { fill: #444d56; font-family: monospace; font-size: 11px; }
     .dots      { fill: #444d56; font-family: monospace; font-size: 11px; }
     .green     { fill: #3fb950; font-family: monospace; font-size: 11px; }
     .red       { fill: #f85149; font-family: monospace; font-size: 11px; }
@@ -58,21 +65,25 @@ var svgTemplate = `<svg xmlns="http://www.w3.org/2000/svg" width="860" height="{
 
   <rect class="sep" x="290" y="12" width="1" height="{{sepHeight .Fields}}" />
 
-  <text class="title" x="308" y="30" textLength="{{rowWidth}}" lengthAdjust="spacingAndGlyphs">{{titleDisplay .Username .Hostname}} <tspan class="titledash">{{titleDashes .Username .Hostname}}</tspan></text>
+  <text class="title" x="308" y="30" textLength="{{rowWidth}}" lengthAdjust="spacingAndGlyphs"> {{titleDisplay .Username .Hostname}} <tspan class="titledash">{{titleDashes .Username .Hostname}}</tspan></text>
 
   {{range $i, $field := .Fields}}
   {{if eq $field.Type "divider"}}
-  <text class="divider" x="308" y="{{fieldY $i}}" textLength="{{rowWidth}}" lengthAdjust="spacingAndGlyphs">- {{$field.Label}} - <tspan class="dividash">{{dividerDashes $field.Label}}</tspan></text>
+  <text class="divider" x="308" y="{{fieldY $i}}" textLength="{{rowWidth}}" lengthAdjust="spacingAndGlyphs"> - {{$field.Label}} - <tspan class="dividash">{{dividerDashes $field.Label}}</tspan></text>
   {{else if eq $field.Type "spacer"}}
+  <text class="key" x="308" y="{{fieldY $i}}"> <tspan class="dot">·</tspan></text>
+  {{else if eq $field.Type "spacergap"}}
   {{else if eq $field.Type "halfspacer"}}
   {{else}}
-  <text class="key" x="308" y="{{fieldY $i}}" textLength="{{rowWidth}}" lengthAdjust="spacingAndGlyphs">·{{$field.Label}}: <tspan class="dots">{{$field.Dots}}</tspan><tspan class="{{valClass $field.Color}}">{{$field.Value}}</tspan></text>
+  <text class="key" x="308" y="{{fieldY $i}}" textLength="{{rowWidth}}" lengthAdjust="spacingAndGlyphs"> <tspan class="dot">· </tspan>{{whiteDots $field.Label}}<tspan class="dot">:</tspan> <tspan class="dots">{{$field.Dots}}</tspan><tspan class="{{valClass $field.Color}}">{{colorValue $field.Value}}</tspan></text>
   {{end}}
   {{end}}
 
 </svg>`
 
 func renderCard(input CardInput, result *string) error {
+	input.Fields = markSpacerGaps(input.Fields)
+
 	funcMap := template.FuncMap{
 		"asciiY": func(i int) int {
 			cardHeight := fieldsTop + fieldsHeight(input.Fields) + 6
@@ -104,7 +115,7 @@ func renderCard(input CardInput, result *string) error {
 		"titleDashes": func(username, hostname string) string {
 			title := titleStr(username, hostname)
 			totalCols := (colValue - colStart) / charWidth
-			dashes := totalCols - len(title) - 1
+			dashes := totalCols - len(title) - 2
 			if dashes < 3 {
 				dashes = 3
 			}
@@ -112,13 +123,21 @@ func renderCard(input CardInput, result *string) error {
 		},
 		"dividerDashes": func(label string) string {
 			totalCols := (colValue - colStart) / charWidth
-			dashes := totalCols - len(label) - 5
+			dashes := totalCols - len(label) - 6
 			if dashes < 3 {
 				dashes = 3
 			}
 			return strings.Repeat("-", dashes)
 		},
 		"rowWidth": func() int { return colValue - colStart },
+		"whiteDots": func(s string) string {
+			return strings.ReplaceAll(s, ".", `<tspan class="val">.</tspan>`)
+		},
+		"colorValue": func(s string) string {
+			s = plusRe.ReplaceAllString(s, `<tspan class="green">$0</tspan>`)
+			s = minusRe.ReplaceAllString(s, `<tspan class="red">$0</tspan>`)
+			return s
+		},
 		"valClass": func(color string) string {
 			switch color {
 			case "green":
@@ -193,16 +212,21 @@ func appendGitHubStats(fields []Field, username string, showStats bool) []Field 
 	if err != nil {
 		return fields
 	}
-	if len(fields) > 0 {
-		fields = append(fields, Field{Type: "halfspacer"})
-	}
 	return append(fields,
 		makeDivider("GitHub Stats"),
-		makeField("Repos",         fmt.Sprintf("%d", stats.TotalRepos),   ""),
-		makeField("Commits",       fmt.Sprintf("%d", stats.TotalCommits), ""),
-		makeField("Lines Added",   fmt.Sprintf("%d", stats.LinesAdded),   "green"),
-		makeField("Lines Deleted", fmt.Sprintf("%d", stats.LinesDeleted), "red"),
+		makeField("Repos",           fmt.Sprintf("%d", stats.TotalRepos),   ""),
+		makeField("Commits",         fmt.Sprintf("%d", stats.TotalCommits), ""),
+		makeField("Lines on GitHub", fmt.Sprintf("%d (%d++, %d--)", stats.LinesAdded-stats.LinesDeleted, stats.LinesAdded, stats.LinesDeleted), ""),
 	)
+}
+
+func markSpacerGaps(fields []Field) []Field {
+	for i := range fields {
+		if fields[i].Type == "spacer" && i+1 < len(fields) && fields[i+1].Type == "divider" {
+			fields[i].Type = "spacergap"
+		}
+	}
+	return fields
 }
 
 func makeField(label, value, color string) Field {
@@ -224,7 +248,7 @@ func makeDivider(label string) Field {
 
 func makeDots(label, value string) string {
 	totalCols := (colValue - colStart) / charWidth
-	labelCols := len(label) + 3
+	labelCols := len(label) + 4
 	valueCols := len(value)
 	dots := totalCols - labelCols - valueCols
 	if dots < 3 {
