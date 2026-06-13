@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"sync"
+	"time"
 )
 
 type GitHubStats struct {
@@ -26,11 +29,64 @@ type contributorStats struct {
 	Weeks []contributionWeek	`json:"weeks"`
 }
 
+type statsCacheEntry struct {
+	stats   GitHubStats
+	err     error
+	expires time.Time
+}
+
+var (
+	statsCacheMu sync.Mutex
+	statsCache   = map[string]statsCacheEntry{}
+)
+
+const (
+	statsSuccessTTL = 1 * time.Hour
+	statsErrorTTL   = 1 * time.Minute
+	statsPendingTTL = 30 * time.Second
+)
+
 func FetchGitHubStats(username string) (GitHubStats, error) {
+	statsCacheMu.Lock()
+	if e, ok := statsCache[username]; ok && time.Now().Before(e.expires) {
+		statsCacheMu.Unlock()
+		return e.stats, e.err
+	}
+	statsCacheMu.Unlock()
+
+	stats, err := fetchGitHubStats(username)
+
+	ttl := statsSuccessTTL
+	if err != nil {
+		ttl = statsErrorTTL
+	} else if stats.TotalRepos > 0 && stats.TotalCommits == 0 && stats.LinesAdded == 0 {
+		ttl = statsPendingTTL
+	}
+
+	statsCacheMu.Lock()
+	statsCache[username] = statsCacheEntry{stats: stats, err: err, expires: time.Now().Add(ttl)}
+	statsCacheMu.Unlock()
+
+	return stats, err
+}
+
+func githubGet(url string) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "application/vnd.github+json")
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	return http.DefaultClient.Do(req)
+}
+
+func fetchGitHubStats(username string) (GitHubStats, error) {
 	var stats GitHubStats
 
 	repos, err := fetchRepos(username)
-	
+
 	if err != nil {
 		return stats, err
 	}
@@ -59,8 +115,8 @@ func fetchRepos(username string) ([]string, error) {
 		username,
 	)
 
-	resp, err := http.Get(url)
-	
+	resp, err := githubGet(url)
+
 	if err != nil {
 		return nil, err
 	}
@@ -92,8 +148,8 @@ func fetchRepoStats(username, repo string) (GitHubStats, error) {
 		username, repo,
 	)
 
-	resp, err := http.Get(url)
-	
+	resp, err := githubGet(url)
+
 	if err != nil {
 		return stats, err
 	}

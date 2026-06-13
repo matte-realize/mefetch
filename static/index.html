@@ -3,78 +3,82 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mefetch README Generator</title>
+  <title>Mefetch Generator</title>
   <link rel="stylesheet" href="/style.css">
 </head>
-<body>
+  <body>
 
-  <h1>Mefetch</h1>
-  <p class="subtitle">Generate a Neofetch-style card for your GitHub profile README</p>
+    <h1>Mefetch</h1>
+    <p class="subtitle">Generate a Neofetch-style card for your GitHub profile README</p>
 
-  <div class="layout">
+    <div class="layout">
 
-    <div class="panel">
+      <div class="panel">
 
-      <h2>Identity</h2>
-      <div class="field-group">
-        <label>username</label>
-        <input type="text" id="username" placeholder="username" oninput="updatePreview()">
-      </div>
-      <div class="field-group">
-        <label>hostname</label>
-        <input type="text" id="hostname" placeholder="hostname" oninput="updatePreview()">
-      </div>
-
-      <hr class="divider">
-      <h2>Colors</h2>
-      <div class="color-row">
+        <h2>Identity</h2>
         <div class="field-group">
-          <label>background</label>
-          <input type="color" id="background" value="#0d1117" oninput="updatePreview()">
+          <label>username</label>
+          <input type="text" id="username" placeholder="username" oninput="updatePreview()">
         </div>
         <div class="field-group">
-          <label>key color</label>
-          <input type="color" id="keycolor" value="#58a6ff" oninput="updatePreview()">
+          <label>hostname</label>
+          <input type="text" id="hostname" placeholder="macbook" oninput="updatePreview()">
         </div>
+
+        <hr class="divider">
+        <h2>Colors</h2>
+        <div class="color-row">
+          <div class="field-group">
+            <label>background</label>
+            <input type="color" id="background" value="#0d1117" oninput="updatePreview()">
+          </div>
+          <div class="field-group">
+            <label>key color</label>
+            <input type="color" id="keycolor" value="#58a6ff" oninput="updatePreview()">
+          </div>
+          <div class="field-group">
+            <label>text color</label>
+            <input type="color" id="textcolor" value="#cdd9e5" oninput="updatePreview()">
+          </div>
+        </div>
+
+        <hr class="divider">
+        <h2>GitHub Stats</h2>
         <div class="field-group">
-          <label>text color</label>
-          <input type="color" id="textcolor" value="#cdd9e5" oninput="updatePreview()">
+          <label>
+            <input type="checkbox" id="showstats" checked onchange="updatePreview()">
+            show GitHub stats on card
+          </label>
         </div>
+
+        <hr class="divider">
+        <h2>Custom Fields</h2>
+        <div class="fields-list" id="fields-list"></div>
+        <div class="btn-row">
+          <button class="btn" onclick="addField()">+ add field</button>
+          <button class="btn" onclick="addSection()">+ add section</button>
+          <button class="btn" onclick="addSpacer()">+ add space</button>
+        </div>
+
+        <hr class="divider">
+        <h2>ASCII Art</h2>
+        <label id="upload-label" for="image-upload">
+          click to upload image
+        </label>
+        <input type="file" id="image-upload" accept="image/*" onchange="handleImageUpload(this)">
+        <div id="upload-status"></div>
+
+        <button class="btn primary" onclick="downloadCard()">download svg</button>
+
       </div>
 
-      <hr class="divider">
-      <h2>Custom Fields</h2>
-      <div class="fields-list" id="fields-list"></div>
-      <button class="btn" onclick="addField()">+ add field</button>
-
-      <hr class="divider">
-      <h2>ASCII Art</h2>
-      <label id="upload-label" for="image-upload">
-        click to upload image
-      </label>
-      <input type="file" id="image-upload" accept="image/*" onchange="handleImageUpload(this)">
-      <div id="upload-status"></div>
-
-      <hr class="divider">
-      <h2>GitHub Stats</h2>
-      <div class="field-group">
-      <label>
-          <input type="checkbox" id="showstats" checked onchange="updatePreview()">
-          show GitHub stats on card
-      </label>
+      <div class="preview-panel">
+        <h2>Preview</h2>
+        <img id="card-preview" src="" alt="card preview">
       </div>
-
-      <button class="btn primary" onclick="downloadCard()">download svg</button>
 
     </div>
 
-    <div class="preview-panel">
-      <h2>Preview</h2>
-      <img id="card-preview" src="" alt="card preview">
-    </div>
-
-  </div>
-
-  <script src="/script.js"></script>
-</body>
+    <script src="/script.js"></script>
+  </body>
 </html>

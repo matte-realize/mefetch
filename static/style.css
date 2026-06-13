@@ -77,6 +77,12 @@ input[type="color"] {
   cursor: pointer;
 }
 
+input[type="checkbox"] {
+  accent-color: #58a6ff;
+  cursor: pointer;
+  margin-right: 0.4rem;
+}
+
 .color-row {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -89,10 +95,51 @@ input[type="color"] {
 
 .field-row {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: auto 1fr 1fr auto;
   gap: 0.5rem;
   margin-bottom: 0.5rem;
   align-items: center;
+  cursor: default;
+}
+
+.spacer-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  align-items: center;
+}
+
+.drag-handle {
+  color: #444d56;
+  cursor: grab;
+  font-size: 0.9rem;
+  padding: 0 4px;
+  user-select: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.field-row.dragging,
+.spacer-row.dragging {
+  opacity: 0.4;
+}
+
+.field-row.drag-over,
+.spacer-row.drag-over {
+  border-top: 2px solid #58a6ff;
+}
+
+.spacer-label {
+  color: #444d56;
+  font-size: 0.75rem;
+  font-family: monospace;
+  padding: 0.4rem 0.75rem;
+  border: 1px dashed #30363d;
+  border-radius: 4px;
+  text-align: center;
 }
 
 .btn {
@@ -124,6 +171,12 @@ input[type="color"] {
   color: #0d1117;
 }
 
+.btn-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
 .preview-panel {
   position: sticky;
   top: 2rem;
@@ -142,42 +195,6 @@ input[type="color"] {
   border-radius: 8px;
   border: 1px solid #30363d;
   display: block;
-}
-
-.snippet-box {
-  margin-top: 1rem;
-  background: #161b22;
-  border: 1px solid #30363d;
-  border-radius: 8px;
-  padding: 1rem;
-}
-
-.snippet-box label {
-  color: #58a6ff;
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 0.5rem;
-}
-
-#snippet-output {
-  background: #0d1117;
-  border: 1px solid #30363d;
-  border-radius: 4px;
-  color: #3fb950;
-  font-family: monospace;
-  font-size: 0.75rem;
-  padding: 0.75rem;
-  width: 100%;
-  resize: none;
-  outline: none;
-  line-height: 1.5;
-}
-
-.copy-row {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
 }
 
 #upload-label {

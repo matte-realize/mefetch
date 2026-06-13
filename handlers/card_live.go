@@ -1,9 +1,7 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
-	"strings"
 )
 
 func CardLive(w http.ResponseWriter, r *http.Request) {
@@ -14,39 +12,11 @@ func CardLive(w http.ResponseWriter, r *http.Request) {
 
 	q := r.URL.Query()
 
-	var fields []Field
-	for _, f := range q["field"] {
-		parts := strings.SplitN(f, ":", 2)
-		if len(parts) == 2 {
-			fields = append(fields, makeField(parts[0], parts[1], ""))
-		}
-	}
-
 	username := q.Get("username")
-	if username != "" {
-		stats, err := FetchGitHubStats(username)
-		if err == nil {
-			fields = append(fields,
-				makeField("Repos",         fmt.Sprintf("%d", stats.TotalRepos),   ""),
-				makeField("Commits",       fmt.Sprintf("%d", stats.TotalCommits), ""),
-				makeField("Lines Added",   fmt.Sprintf("%d", stats.LinesAdded),   "green"),
-				makeField("Lines Deleted", fmt.Sprintf("%d", stats.LinesDeleted), "red"),
-			)
-		}
-	}
-
 	showStats := q.Get("showstats") != "false"
-	if username != "" && showStats {
-		stats, err := FetchGitHubStats(username)
-		if err == nil {
-			fields = append(fields,
-				makeField("Repos",         fmt.Sprintf("%d", stats.TotalRepos),   ""),
-				makeField("Commits",       fmt.Sprintf("%d", stats.TotalCommits), ""),
-				makeField("Lines Added",   fmt.Sprintf("%d", stats.LinesAdded),   "green"),
-				makeField("Lines Deleted", fmt.Sprintf("%d", stats.LinesDeleted), "red"),
-			)
-		}
-	}
+
+	fields := parseFields(q["field"])
+	fields = appendGitHubStats(fields, username, showStats)
 
 	input := defaultInput(CardInput{
 		Username:   username,

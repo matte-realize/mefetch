@@ -14,16 +14,14 @@ func CardGenerate(w http.ResponseWriter, r *http.Request) {
 
 	r.ParseMultipartForm(10 << 20)
 
-	var fields []Field
-	for _, f := range r.Form["field"] {
-		parts := strings.SplitN(f, ":", 2)
-		if len(parts) == 2 {
-			fields = append(fields, makeField(parts[0], parts[1], ""))
-		}
-	}
+	username := r.FormValue("username")
+	showStats := r.FormValue("showstats") != "false"
+
+	fields := parseFields(r.Form["field"])
+	fields = appendGitHubStats(fields, username, showStats)
 
 	input := defaultInput(CardInput{
-		Username:   r.FormValue("username"),
+		Username:   username,
 		Hostname:   r.FormValue("hostname"),
 		Background: r.FormValue("background"),
 		KeyColor:   r.FormValue("keycolor"),
@@ -41,11 +39,12 @@ func CardGenerate(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				return nil
 			}
-			return convertToAscii(img, &asciiArt)
+			return convertToAscii(img, &asciiArt, maxAsciiRows(input.Fields))
 		},
 		func() error {
 			if asciiArt != "" {
-				input.AsciiLines = strings.Split(asciiArt, "\n")
+				lines := strings.Split(asciiArt, "\n")
+				input.AsciiLines = trimAsciiLines(lines, input.Fields)
 			}
 			return renderCard(input, &result)
 		},

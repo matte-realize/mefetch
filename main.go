@@ -25,6 +25,9 @@ func main() {
 	mux.Handle("/", http.FileServer(http.Dir("static")))
 
 	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
 	go func() {
 		time.Sleep(500 * time.Millisecond)
