@@ -197,7 +197,8 @@ input[type="checkbox"] {
   display: block;
 }
 
-#upload-label {
+#upload-label,
+#import-label {
   display: block;
   border: 1px dashed #30363d;
   border-radius: 4px;
@@ -209,15 +210,20 @@ input[type="checkbox"] {
   transition: border-color 0.2s;
 }
 
-#upload-label:hover { border-color: #58a6ff; color: #58a6ff; }
-#image-upload { display: none; }
+#upload-label:hover,
+#import-label:hover { border-color: #58a6ff; color: #58a6ff; }
+#image-upload,
+#svg-import { display: none; }
 
-#upload-status {
+#upload-status,
+#import-status {
   font-size: 0.75rem;
   color: #3fb950;
   margin-top: 0.4rem;
   min-height: 1rem;
 }
+
+#import-status { margin-bottom: 0.5rem; }
 
 .divider {
   border: none;

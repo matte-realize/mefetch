@@ -36,9 +36,11 @@ type CardInput struct {
 	TextColor  string
 	AsciiLines []string
 	Fields     []Field
+	ConfigJSON string
 }
 
 var svgTemplate = `<svg xmlns="http://www.w3.org/2000/svg" width="860" height="{{svgHeight .Fields}}" viewBox="0 0 860 {{svgHeight .Fields}}">
+  {{if .ConfigJSON}}<metadata id="mefetch-config">{{.ConfigJSON}}</metadata>{{end}}
   <style>
     .bg        { fill: {{.Background}}; }
     .border    { fill: none; stroke: #30363d; stroke-width: 1; }

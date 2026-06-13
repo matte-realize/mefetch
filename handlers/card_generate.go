@@ -17,7 +17,8 @@ func CardGenerate(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	showStats := r.FormValue("showstats") != "false"
 
-	fields := parseFields(r.Form["field"])
+	rawFields := r.Form["field"]
+	fields := parseFields(rawFields)
 	fields = appendGitHubStats(fields, username, showStats)
 
 	input := defaultInput(CardInput{
@@ -37,6 +38,9 @@ func CardGenerate(w http.ResponseWriter, r *http.Request) {
 		func() error {
 			err := parseImage(r, &img)
 			if err != nil {
+				if a := r.FormValue("ascii"); a != "" {
+					asciiArt = a
+				}
 				return nil
 			}
 			return convertToAscii(img, &asciiArt, maxAsciiRows(input.Fields))
@@ -46,6 +50,16 @@ func CardGenerate(w http.ResponseWriter, r *http.Request) {
 				lines := strings.Split(asciiArt, "\n")
 				input.AsciiLines = trimAsciiLines(lines, input.Fields)
 			}
+			input.ConfigJSON = encodeConfig(cardConfig{
+				Username:   username,
+				Hostname:   input.Hostname,
+				Background: input.Background,
+				KeyColor:   input.KeyColor,
+				TextColor:  input.TextColor,
+				ShowStats:  showStats,
+				Fields:     rawFields,
+				Ascii:      strings.Join(input.AsciiLines, "\n"),
+			})
 			return renderCard(input, &result)
 		},
 	)

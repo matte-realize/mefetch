@@ -44,6 +44,8 @@ docker run -p 8080:8080 mefetch
 3. Upload an image to generate ASCII art
 4. Copy the embed URL into your GitHub profile README
 
+To pick up where you left off, click **import** and select a previously downloaded `.svg` — your fields, colors, sections, and ASCII art are restored from metadata embedded in the file. Use **remove loaded svg** to clear the imported art and start fresh.
+
 Set `PORT` to run on a different port.
 
 ## Embed in your README
@@ -59,6 +61,22 @@ Set `PORT` to run on a different port.
 ```
 
 This embeds a static export — no running server required.
+
+## Editing an existing card
+
+Every downloaded `.svg` carries its own configuration, so you never have to rebuild a card from scratch.
+
+On export, Mefetch embeds a `<metadata id="mefetch-config">` element containing a base64-encoded JSON snapshot of the card — username, hostname, colors, the show-stats toggle, every custom field/section/spacer in order, and the rendered ASCII art:
+
+```xml
+<metadata id="mefetch-config">eyJ1c2VybmFtZSI6Im9jdG9jYXQiLCJ...</metadata>
+```
+
+The metadata is invisible in the rendered card and is omitted from the live `/card.svg` embed URL to keep README embeds lean.
+
+To resume editing, click **import** in the app and select a previously downloaded `.svg` — the form is repopulated from this metadata exactly as exported. Click **remove loaded svg** to clear the imported ASCII art and start fresh while keeping your fields and colors.
+
+Imported ASCII art is restored at the resolution it was exported. If you later add many fields, re-upload the source image to regenerate the art at full height.
 
 ## URL params
 

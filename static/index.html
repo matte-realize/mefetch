@@ -67,6 +67,13 @@
         </label>
         <input type="file" id="image-upload" accept="image/*" onchange="handleImageUpload(this)">
         <div id="upload-status"></div>
+        <button class="btn danger" onclick="removeSvg()">remove loaded svg</button>
+
+        <hr class="divider">
+        <h2>Import</h2>
+        <label id="import-label" for="svg-import">click to import an exported svg</label>
+        <input type="file" id="svg-import" accept=".svg,image/svg+xml" onchange="handleSvgImport(this)">
+        <div id="import-status"></div>
 
         <button class="btn primary" onclick="downloadCard()">download svg</button>
 

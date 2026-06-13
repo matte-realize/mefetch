@@ -1,4 +1,5 @@
 let uploadedImage = null;
+let importedAscii = null;
 let dragSrc = null;
 let previewURL = null;
 let previewSeq = 0;
@@ -37,7 +38,11 @@ function getFields() {
 
 function buildForm() {
   const form = new FormData();
-  if (uploadedImage) form.append('image', uploadedImage);
+  if (uploadedImage) {
+    form.append('image', uploadedImage);
+  } else if (importedAscii) {
+    form.append('ascii', importedAscii);
+  }
   form.append('username',   document.getElementById('username').value.trim());
   form.append('hostname',   document.getElementById('hostname').value.trim());
   form.append('background',  document.getElementById('background').value);
@@ -85,10 +90,12 @@ function addField(label = '', value = '') {
   row.dataset.type = 'field';
   row.innerHTML = `
     <span class="drag-handle" title="drag to reorder">⠿</span>
-    <input type="text" class="field-label" placeholder="label" value="${label}" oninput="updatePreview()">
-    <input type="text" class="field-value" placeholder="value" value="${value}" oninput="updatePreview()">
+    <input type="text" class="field-label" placeholder="label" oninput="updatePreview()">
+    <input type="text" class="field-value" placeholder="value" oninput="updatePreview()">
     <button class="btn danger" onclick="removeField(this)">✕</button>
   `;
+  row.querySelector('.field-label').value = label;
+  row.querySelector('.field-value').value = value;
   addDragListeners(row);
   list.appendChild(row);
   updatePreview();
@@ -102,11 +109,12 @@ function addSection(label = '') {
   row.dataset.type = 'section';
   row.innerHTML = `
     <span class="drag-handle" title="drag to reorder">⠿</span>
-    <input type="text" class="field-label" placeholder="section name" value="${label}"
+    <input type="text" class="field-label" placeholder="section name"
            oninput="updatePreview()" style="grid-column: span 2;">
     <input type="hidden" class="field-value" value="__divider__">
     <button class="btn danger" onclick="removeField(this)">✕</button>
   `;
+  row.querySelector('.field-label').value = label;
   addDragListeners(row);
   list.appendChild(row);
   updatePreview();
@@ -182,8 +190,91 @@ function handleImageUpload(input) {
   const file = input.files[0];
   if (!file) return;
   uploadedImage = file;
+  importedAscii = null;
   document.getElementById('upload-status').textContent = `✓ ${file.name}`;
   document.getElementById('upload-label').textContent = file.name;
+  updatePreview();
+}
+
+function decodeConfig(b64) {
+  const bytes = atob(b64);
+  const json = decodeURIComponent(
+    bytes.split('').map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join('')
+  );
+  return JSON.parse(json);
+}
+
+function parseSvgConfig(text) {
+  const match = text.match(/<metadata id="mefetch-config">([^<]*)<\/metadata>/);
+  if (!match) return null;
+  try {
+    return decodeConfig(match[1]);
+  } catch (e) {
+    return null;
+  }
+}
+
+function applyConfig(cfg) {
+  document.getElementById('username').value = cfg.username || '';
+  document.getElementById('hostname').value = cfg.hostname || '';
+  if (cfg.background) document.getElementById('background').value = cfg.background;
+  if (cfg.keycolor)   document.getElementById('keycolor').value   = cfg.keycolor;
+  if (cfg.textcolor)  document.getElementById('textcolor').value  = cfg.textcolor;
+  document.getElementById('showstats').checked = cfg.showstats !== false;
+
+  const list = document.getElementById('fields-list');
+  list.innerHTML = '';
+  (cfg.fields || []).forEach(f => {
+    if (f === '---space---') {
+      addSpacer();
+    } else if (f.startsWith('---:')) {
+      addSection(f.slice(4));
+    } else {
+      const idx = f.indexOf(':');
+      if (idx >= 0) addField(f.slice(0, idx), f.slice(idx + 1));
+    }
+  });
+
+  uploadedImage = null;
+  importedAscii = cfg.ascii || null;
+  document.getElementById('image-upload').value = '';
+  if (importedAscii) {
+    document.getElementById('upload-status').textContent = '✓ ascii art restored from svg';
+    document.getElementById('upload-label').textContent = 'ascii art restored';
+  } else {
+    document.getElementById('upload-status').textContent = '';
+    document.getElementById('upload-label').textContent = 'click to upload image';
+  }
+  updatePreview();
+}
+
+function handleSvgImport(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const cfg = parseSvgConfig(reader.result);
+    const status = document.getElementById('import-status');
+    if (!cfg) {
+      status.style.color = '#f85149';
+      status.textContent = '✕ not a mefetch svg';
+      return;
+    }
+    applyConfig(cfg);
+    status.style.color = '#3fb950';
+    status.textContent = `✓ ${file.name}`;
+  };
+  reader.readAsText(file);
+}
+
+function removeSvg() {
+  uploadedImage = null;
+  importedAscii = null;
+  document.getElementById('image-upload').value = '';
+  document.getElementById('svg-import').value = '';
+  document.getElementById('upload-status').textContent = '';
+  document.getElementById('upload-label').textContent = 'click to upload image';
+  document.getElementById('import-status').textContent = '';
   updatePreview();
 }
 
